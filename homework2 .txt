@@ -1,0 +1,132 @@
+clc
+clear all
+%导入Excel
+filename='cleanBuilding_Permits2.xlsx'
+[data dataText dataCell]=xlsread(filename);
+stdata=dataCell;
+
+
+%% 主程序
+min_sup=0.2;
+confidence=30;
+
+L1=find_frequent_1_itemset(stdata,min_sup);
+Ck=aproiri_gen(L1,min_sup);
+
+%%程序1
+function [L1]=find_frequent_1_itemset(stdata,min_sup)
+  
+L1=stdata;
+L1(1,:)=[];
+L1(:,1)=[];
+    C1=L1;
+
+     for j=1:size(L1,2)
+         x=tabulate(L1(:,j));
+         x=sortrows(x,3,'descend');   %按从大到小排列
+
+         %找出最小支持度小于，在x中的那一行 m
+         for i=1:size(x,1)
+             if x{i,3}<=min_sup
+                 m=i;
+                 break
+             end
+         end
+
+         
+
+         for xi=m:size(x,1)     
+              V=[];
+               vj=1;
+           for ii=1:size(L1,1)   
+               if strcmp(x{xi,1},L1{ii,j})
+                  V(1,vj)=ii;
+                  vj=vj+1;     
+               end       
+           end
+
+            L1(V,:)=[];
+         end
+
+     end
+end
+
+ 
+
+%程序2
+function [Ck]=aproiri_gen(L1,min_sup)
+  
+    %% 创建Ck
+    Ck={};
+    for i=1:size(L1,1)
+        t=1;
+        for j=1:size(L1,2) 
+                for m=j+1:size(L1,2)
+                         C2{i,t}={L1{i,j},L1{i,m}};
+                         t=t+1;
+                end   
+        end
+    end
+
+
+
+    %% 支持度计数 v
+
+
+    v=[];
+    for j=1:size(Ck,2) 
+      vi=1;
+        for i=1:1:size(Ck,1)   
+               support=0;
+            for t=1:size(Ck,1)
+                if strcmp(Ck{i,j},Ck{t,j})
+                support=support+1;
+                end     
+            end    
+              v(vi,j)=support;
+                vi=vi+1;
+        end
+
+    end
+
+    %计算支持度概率,放入support/ b的列是待删除的行
+    support=[];
+    support=100*v./size(Ck,1);
+
+
+    b=[];
+    for supportj=1:size(support,2)
+        bi=1;
+        for supporti=1:size(support,1)
+            if support(supporti,supportj)<=min_sup
+                b(bi,supportj)=supporti;
+                bi=bi+1;
+            end
+        end
+    end
+    c=b;
+    %删除
+    L2=Ck;
+    for j=1:size(b,2)
+        for i=1:size(b,1)
+            if b(i,j)>0
+                L2(b(i,j),:)=[];
+                b(:,j)=b(:,j)-1;
+            end
+        end
+
+    end
+    
+end
+
+
+ 
+
+
+
+
+
+
+
+
+
